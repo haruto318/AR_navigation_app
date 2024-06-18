@@ -343,7 +343,9 @@ extension ViewController: ARSCNViewDelegate {
     
     func restartSessionWithoutDelete() {
         sceneView.session.pause()
-        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        print("--------------------------------------")
+        print("reset")
+//        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
 
     func session(_ session: ARSession, didFailWithError error: Error) {
@@ -457,7 +459,6 @@ extension ViewController {
                 if roomArray.contains(where: { $0.id == text }){
                     stopTextRecognition()
                     detectedText = roomArray.first(where: { $0.id == text })!
-//                    setupLocationService()
                     DispatchQueue.main.sync {
                         showAlert(text: detectedText)
                         
@@ -466,16 +467,9 @@ extension ViewController {
                             
                             startLocation = transform
                             
-//                            for point in self.sample_points{
-//                                addBlueSphere(at: transform, point: point)
-//                            }
                         }
                     }
                 }
-//                if roomArray.contains(where: { $0.id == text }) && !visited_room.contains(text) {
-//                    visited_room.append(text)
-//                    detectedText = text
-//                }
             }
         }
     }
