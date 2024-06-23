@@ -31,8 +31,6 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     
     private var startBtn: UIButton!
     
-    
-    var sample_points: [(z: Float, y: Float)] = [(z: 0, y: 0), (z: 2.2, y: 0), (z: 2.2, y: 9.1), (z: 2.2, y: 18.2)]
     private var sphereNodes: [SCNNode] = []
     var startLocation = simd_float4x4()
     
@@ -55,7 +53,6 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
         
         setupSceneView()
         setupScene()
-
         
         roomArray = [
             (id: "H705", index: "H", coordinate: CLLocationCoordinate2D(latitude: 34.809297, longitude: 135.561312)),
@@ -527,7 +524,6 @@ extension ViewController {
         //UIAlertControllerにカビゴンのアクションを追加する
         let comfirmAction = UIAlertAction(title: "OK", style: UIAlertAction.Style.default, handler: {
             (action: UIAlertAction!) in
-            self.restartTextRecognition()
             self.start = text.index
             self.kakuninButton.isHidden = false /// ボタン表示
             print("カビゴンのシートが選択されました。")
@@ -537,13 +533,13 @@ extension ViewController {
         //UIAlertControllerにキャンセルのアクションを追加する
         let cancelAction = UIAlertAction(title: "cancel", style: UIAlertAction.Style.cancel, handler: {
             (action: UIAlertAction!) in
+            self.restartTextRecognition()
             print("キャンセルのシートが押されました。")
         })
         actionAlert.addAction(cancelAction)
         
         //アクションを表示する
         self.present(actionAlert, animated: true, completion: nil)
-        
     }
 }
 
