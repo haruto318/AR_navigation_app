@@ -43,7 +43,7 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     private var locationManager = CLLocationManager()
     private var currentLocation: CLLocation?
     var detectedText: (id: String, index: Character, coordinate: CLLocationCoordinate2D) = (id: "", index: "H", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)) //Characterの初期値わからん
-    private var isTextRecognitionRunning: Bool = false
+    private var isTextRecognitionRunning: Bool = true
     
     
     var locations: [CLLocation] = []
@@ -431,12 +431,12 @@ extension ViewController: MKMapViewDelegate {
 ///Text Detection
 extension ViewController {
     private func setupTextDetection() {
-        guard !isTextRecognitionRunning else {
-            print("Text recognition is already running.")
-            return
-        }
         textDetectionRequest = VNRecognizeTextRequest { [weak self] request, error in
             if let observations = request.results as? [VNRecognizedTextObservation] {
+                guard self!.isTextRecognitionRunning else {
+                    print("Text recognition is already running.")
+                    return
+                }
                 self?.processObservations(observations)
             }
         }
@@ -446,7 +446,7 @@ extension ViewController {
     private func processObservations(_ observations: [VNRecognizedTextObservation]) {
         guard let _ = sceneView else { return }
         
-        isTextRecognitionRunning = true
+//        isTextRecognitionRunning = true
             
         for observation in observations {
             let topCandidates = observation.topCandidates(1)
@@ -459,11 +459,25 @@ extension ViewController {
                     DispatchQueue.main.sync {
                         showAlert(text: detectedText)
                         
+////                      // Convert bounding box to world coordinates
+//                        let boundingBox = observation.boundingBox
+//                        let midX = boundingBox.midX
+//                        let midY = boundingBox.midY
+//                        let hitTestResults = sceneView.hitTest(CGPoint(x: midX * sceneView.bounds.size.width, y: (1 - midY) * sceneView.bounds.size.height), types: .featurePoint)
+//                        
+//                        if let hitResult = hitTestResults.first {
+//                            let transform = hitResult.worldTransform
+//                            startLocation = transform
+//                            print("startLocation set to: \(transform)")
+//                        } else {
+//                            print("Hit test failed, no feature points detected.")
+//                        }
+                        
                         if let currentFrame = sceneView.session.currentFrame {
                             let transform = currentFrame.camera.transform
                             
                             startLocation = transform
-                            
+                            print("start location: \(transform)")
                         }
                     }
                 }
