@@ -21,7 +21,7 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     var pickerTitleLabel: UILabel!
     let PickerView = UIPickerView()
     let kakuninButton = UIButton()
-    var roomArray: [(id: String, index: Character, coordinate: CLLocationCoordinate2D)] = []
+    var roomArray: [(id: String, index: Character)] = []
     var start: Character = "H"
     var goal: Character = "H"
 
@@ -42,7 +42,7 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     private var visited_room:[String] = []
     private var locationManager = CLLocationManager()
     private var currentLocation: CLLocation?
-    var detectedText: (id: String, index: Character, coordinate: CLLocationCoordinate2D) = (id: "", index: "H", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)) //Characterの初期値わからん
+    var detectedText: (id: String, index: Character) = (id: "", index: "H") //Characterの初期値わからん
     private var isTextRecognitionRunning: Bool = true
     
     
@@ -55,18 +55,18 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
         setupScene()
         
         roomArray = [
-            (id: "H705", index: "H", coordinate: CLLocationCoordinate2D(latitude: 34.809297, longitude: 135.561312)),
-            (id: "H706", index: "I", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H707", index: "J", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H708", index: "M", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H709", index: "N", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H723", index: "G", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H724", index: "F", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H725", index: "E", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H726", index: "D", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H727", index: "C", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H728", index: "B", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204)),
-            (id: "H729", index: "A", coordinate: CLLocationCoordinate2D(latitude: 34.8088872, longitude: 135.561505))]
+            (id: "H705", index: "H"),
+            (id: "H706", index: "I"),
+            (id: "H707", index: "J"),
+            (id: "H708", index: "M"),
+            (id: "H709", index: "N"),
+            (id: "H723", index: "G"),
+            (id: "H724", index: "F"),
+            (id: "H725", index: "E"),
+            (id: "H726", index: "D"),
+            (id: "H727", index: "C"),
+            (id: "H728", index: "B"),
+            (id: "H729", index: "A")]
         
         
         setupLocationService()
@@ -447,6 +447,10 @@ extension ViewController {
         guard let _ = sceneView else { return }
         
 //        isTextRecognitionRunning = true
+        guard isTextRecognitionRunning else {
+            print("Text recognition is already running.")
+            return
+        }
             
         for observation in observations {
             let topCandidates = observation.topCandidates(1)
@@ -458,20 +462,6 @@ extension ViewController {
                     detectedText = roomArray.first(where: { $0.id == text })!
                     DispatchQueue.main.sync {
                         showAlert(text: detectedText)
-                        
-////                      // Convert bounding box to world coordinates
-//                        let boundingBox = observation.boundingBox
-//                        let midX = boundingBox.midX
-//                        let midY = boundingBox.midY
-//                        let hitTestResults = sceneView.hitTest(CGPoint(x: midX * sceneView.bounds.size.width, y: (1 - midY) * sceneView.bounds.size.height), types: .featurePoint)
-//                        
-//                        if let hitResult = hitTestResults.first {
-//                            let transform = hitResult.worldTransform
-//                            startLocation = transform
-//                            print("startLocation set to: \(transform)")
-//                        } else {
-//                            print("Hit test failed, no feature points detected.")
-//                        }
                         
                         if let currentFrame = sceneView.session.currentFrame {
                             let transform = currentFrame.camera.transform
@@ -496,7 +486,7 @@ extension ViewController {
         
         // Reset the flag and any necessary variables
         isTextRecognitionRunning = false
-        detectedText = (id: "", index: "H", coordinate: CLLocationCoordinate2D(latitude: 34.810914905107296, longitude: 135.56391536182204))
+        detectedText = (id: "", index: "H")
     }
     
     func restartTextRecognition() {
@@ -532,9 +522,9 @@ extension ViewController {
 
 ///Confirm Alert
 extension ViewController {
-    func showAlert(text: (id: String, index: Character, coordinate: CLLocationCoordinate2D)){
+    func showAlert(text: (id: String, index: Character)){
         //UIAlertControllerを用意する
-        let actionAlert = UIAlertController(title: text.id, message: "Is this the starting point? \(text.coordinate)", preferredStyle: UIAlertController.Style.alert)
+        let actionAlert = UIAlertController(title: text.id, message: "Is this the starting point?", preferredStyle: UIAlertController.Style.alert)
         //UIAlertControllerにカビゴンのアクションを追加する
         let comfirmAction = UIAlertAction(title: "OK", style: UIAlertAction.Style.default, handler: {
             (action: UIAlertAction!) in
@@ -573,7 +563,9 @@ extension ViewController {
         translation.columns.3.z = point.z // 後ろに2.2m
         translation.columns.3.y = point.y // 右に9.1m
         
+        
         let finalTransform = simd_mul(referencePoint, translation)
+        print(finalTransform)
         
         sphereNode.simdTransform = finalTransform
         sceneView.scene.rootNode.addChildNode(sphereNode)
