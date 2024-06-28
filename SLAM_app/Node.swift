@@ -100,11 +100,11 @@ func constructPath(goalNode: Node) -> [Node] {
         } else if (node.x < path[index - 1].x && startLine == 1) || (node.x > path[index - 1].x &&  startLine == 3){ ///廊下 右
             print("廊下：\(index)")
             path[index].ARPoint = path[index - 1].ARPoint
-            path[index].ARPoint.y += 9.1/2
+            path[index].ARPoint.y += 9.1/3
         } else if (node.x > path[index - 1].x && startLine == 1) || (node.x < path[index - 1].x &&  startLine == 3){ ///廊下 左
             print("廊下：\(index)")
             path[index].ARPoint = path[index - 1].ARPoint
-            path[index].ARPoint.y -= 9.1/2
+            path[index].ARPoint.y -= 9.1/3
         } else if (node.x == path[index - 1].x) && node.y != startLine { ///ゴール前（startと異なるライン）
             print("ゴール前（startと異なるライン）：\(index)")
             path[index].ARPoint = path[index - 1].ARPoint

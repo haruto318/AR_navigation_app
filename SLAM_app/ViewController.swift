@@ -51,9 +51,6 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        setupSceneView()
-        setupScene()
-        
         roomArray = [
             (id: "H705", index: "H"),
             (id: "H706", index: "I"),
@@ -68,6 +65,8 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
             (id: "H728", index: "B"),
             (id: "H729", index: "A")]
         
+        setupSceneView()
+        setupScene()
         
         setupLocationService()
         setupScrollView()
@@ -221,8 +220,7 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
             let path = aStar(startNode: startNode, goalNode: goalNode)
             ///2D Map
             mapView.path = path
-            
-            
+       
             /// AR Map
             for node in self.mapView.path{
                 print(node.ARPoint)
@@ -234,17 +232,23 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     func createNodes() -> [Character: Node] {
         let map = [
             "#####",
-            "#GmH#",
+            "#GsH#",
+            "##r##",
+            "##q##",
+            "#FpI#",
+            "##o##",
+            "##n##",
+            "#EmJ#",
             "##l##",
-            "#FkI#",
-            "##j##",
-            "#EiJ#",
+            "##k##",
+            "#Dj##",
+            "##i##",
             "##h##",
-            "#Dg##",
+            "#Cg##",
             "##f##",
-            "#Ce##",
-            "##d##",
-            "#BcM#",
+            "##e##",
+            "#BdM#",
+            "##c##",
             "##b##",
             "#AaN#",
             "#####"
@@ -525,12 +529,12 @@ extension ViewController {
     func showAlert(text: (id: String, index: Character)){
         //UIAlertControllerを用意する
         let actionAlert = UIAlertController(title: text.id, message: "Is this the starting point?", preferredStyle: UIAlertController.Style.alert)
-        //UIAlertControllerにカビゴンのアクションを追加する
+        //UIAlertControllerにOKのアクションを追加する
         let comfirmAction = UIAlertAction(title: "OK", style: UIAlertAction.Style.default, handler: {
             (action: UIAlertAction!) in
             self.start = text.index
             self.kakuninButton.isHidden = false /// ボタン表示
-            print("カビゴンのシートが選択されました。")
+            print("Okのシートが選択されました。")
         })
         actionAlert.addAction(comfirmAction)
         
