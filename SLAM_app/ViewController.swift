@@ -624,122 +624,80 @@
 
 import UIKit
 import ARKit
-import Vision
+import SceneKit
 
 class ViewController: UIViewController, ARSCNViewDelegate {
     var sceneView: ARSCNView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        setupSceneView()
-        startARSession()
+        setupARSceneView()
+        setupARConfiguration()
     }
     
-    func setupSceneView() {
-        sceneView = ARSCNView(frame: self.view.frame)
-        self.view.addSubview(sceneView)
-        
+    func setupARSceneView() {
+        sceneView = ARSCNView(frame: view.bounds)
         sceneView.delegate = self
+        sceneView.showsStatistics = true
+        sceneView.autoenablesDefaultLighting = true
+        view.addSubview(sceneView)
     }
     
-    func startARSession() {
+    func setupARConfiguration() {
         let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = .horizontal
-        sceneView.session.run(configuration)
         
-        // 表札の検出を定期的に行う
-        Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(detectNameplates), userInfo: nil, repeats: true)
-    }
-    
-    @objc func detectNameplates() {
-        guard let currentFrame = sceneView.session.currentFrame else { return }
-        
-        let request = VNDetectTextRectanglesRequest(completionHandler: detectTextHandler)
-        request.reportCharacterBoxes = true
-        
-        let image = CIImage(cvPixelBuffer: currentFrame.capturedImage)
-        let handler = VNImageRequestHandler(ciImage: image, options: [:])
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                try handler.perform([request])
-            } catch {
-                print("Failed to perform request: \(error)")
-            }
+        guard let nameplateImage = UIImage(named: "nameplate"),
+              let cgImage = nameplateImage.cgImage else {
+            fatalError("Failed to load nameplate image")
         }
-    }
-    
-    func detectTextHandler(request: VNRequest, error: Error?) {
-        guard let observations = request.results as? [VNTextObservation] else { return }
         
-        for observation in observations {
-            let boundingBox = observation.boundingBox
-            DispatchQueue.main.async {
-                self.addSpheres(at: boundingBox)
-            }
-        }
-    }
-    
-    func addSpheres(at boundingBox: CGRect) {
-        guard let currentFrame = sceneView.session.currentFrame else { return }
+        let referenceImage = ARReferenceImage(cgImage, orientation: .up, physicalWidth: 0.2) // 実際の表札サイズに合わせて調整してください
+        referenceImage.name = "nameplate"
         
-        // デバッグログを追加
-        print("Adding spheres at bounding box: \(boundingBox)")
+        configuration.detectionImages = [referenceImage]
         
-        let transform = getTransform(for: boundingBox, in: currentFrame)
-        
-        // 初期位置に青い球体を追加
-        addSphere(at: transform, color: .blue)
-        
-        // 法線ベクトルに沿って2メートル先に緑の球体を追加
-        let normalVector = simd_make_float3(transform.columns.2.x, transform.columns.2.y, transform.columns.2.z)
-        let position2mAhead = simd_float3(transform.columns.3.x, transform.columns.3.y, transform.columns.3.z) + normalVector * 2.0
-        
-        var transform2mAhead = transform
-        transform2mAhead.columns.3 = simd_make_float4(position2mAhead.x, position2mAhead.y, position2mAhead.z, 1.0)
-        addSphere(at: transform2mAhead, color: .green)
-    }
-    
-    func getTransform(for boundingBox: CGRect, in frame: ARFrame) -> simd_float4x4 {
-        let center = CGPoint(x: boundingBox.midX, y: boundingBox.midY)
-        
-        let cameraTransform = frame.camera.transform
-        var transform = matrix_identity_float4x4
-        
-        let projectionMatrix = frame.camera.projectionMatrix(for: .landscapeRight, viewportSize: self.sceneView.bounds.size, zNear: 0.01, zFar: 1000)
-        let cameraToScreenTransform = frame.displayTransform(for: .landscapeRight, viewportSize: self.sceneView.bounds.size).inverted()
-        let screenSpacePoint = center.applying(cameraToScreenTransform)
-        
-        let normalizedDeviceCoordinates = CGPoint(x: (screenSpacePoint.x - 0.5) * 2.0, y: (screenSpacePoint.y - 0.5) * 2.0)
-        
-        let unprojectedPoint = simd_make_float4(Float(normalizedDeviceCoordinates.x), Float(normalizedDeviceCoordinates.y), 1.0, 1.0)
-        let unprojectedTransform = projectionMatrix.inverse * unprojectedPoint
-        
-        transform.columns.3.x = unprojectedTransform.x / unprojectedTransform.w
-        transform.columns.3.y = unprojectedTransform.y / unprojectedTransform.w
-        transform.columns.3.z = unprojectedTransform.z / unprojectedTransform.w
-        transform = cameraTransform * transform
-        
-        return transform
-    }
-    
-    func addSphere(at transform: simd_float4x4, color: UIColor) {
-        let sphere = SCNSphere(radius: 0.1)
-        let material = SCNMaterial()
-        material.diffuse.contents = color
-        sphere.materials = [material]
-        
-        let sphereNode = SCNNode(geometry: sphere)
-        sphereNode.simdTransform = transform
-        
-        sceneView.scene.rootNode.addChildNode(sphereNode)
-        
-        // デバッグログを追加
-        print("Sphere added at transform: \(transform)")
+        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        // 必要に応じて追加の処理をここに記述します
+        guard let imageAnchor = anchor as? ARImageAnchor,
+              imageAnchor.name == "nameplate" else { return }
+        
+        let position = SCNVector3(imageAnchor.transform.columns.3.x,
+                                  imageAnchor.transform.columns.3.y,
+                                  imageAnchor.transform.columns.3.z)
+        
+        // 法線ベクトルを取得（画像の前向きベクトル）
+        let normal = SCNVector3(imageAnchor.transform.columns.1.x,
+                                imageAnchor.transform.columns.1.y,
+                                imageAnchor.transform.columns.1.z)
+        
+        addSpheres(at: position, normal: normal)
+    }
+    
+    func addSpheres(at position: SCNVector3, normal: SCNVector3) {
+        // 青い球体を表札の位置に配置
+        let blueSphere = createSphere(color: .blue, radius: 0.05)
+        blueSphere.position = position
+        sceneView.scene.rootNode.addChildNode(blueSphere)
+        
+        // 緑の球体を法線方向に2メートル離れた位置に配置
+        let greenSphere = createSphere(color: .green, radius: 0.05)
+        let distance: Float = 2.0
+        let greenSpherePosition = SCNVector3(
+            position.x + normal.x * distance + 2.0, //右に２メートル
+            position.y + normal.y * distance,
+            position.z + normal.z * distance
+        )
+        greenSphere.position = greenSpherePosition
+        sceneView.scene.rootNode.addChildNode(greenSphere)
+    }
+    
+    func createSphere(color: UIColor, radius: CGFloat) -> SCNNode {
+        let sphere = SCNSphere(radius: radius)
+        let material = SCNMaterial()
+        material.diffuse.contents = color
+        sphere.materials = [material]
+        return SCNNode(geometry: sphere)
     }
 }
