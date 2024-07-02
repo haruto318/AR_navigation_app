@@ -16,6 +16,7 @@ class Node: Hashable {
     var hCost: Int = 0
     var parent: Node?
     var ARPoint: (z: Float, y: Float) = (z: 0, y: 0)
+    var pointType: Int = 0
 
     var fCost: Int {
         return gCost + hCost
@@ -93,26 +94,32 @@ func constructPath(goalNode: Node) -> [Node] {
         if index == 0 { ///原点
             print("原点：\(index)")
             print("\(node.id) = \(node.x): \(node.y)")
+            path[index].pointType = 0
             continue
         } else if index == 1 {
             print("後ろ：\(index)")
             path[index].ARPoint = (z: 2.2, y: 0) ///後ろ
+            path[index].pointType = 1
         } else if (node.x < path[index - 1].x && startLine == 1) || (node.x > path[index - 1].x &&  startLine == 3){ ///廊下 右
             print("廊下：\(index)")
             path[index].ARPoint = path[index - 1].ARPoint
             path[index].ARPoint.y += 9.1/3
+            path[index].pointType = 2
         } else if (node.x > path[index - 1].x && startLine == 1) || (node.x < path[index - 1].x &&  startLine == 3){ ///廊下 左
             print("廊下：\(index)")
             path[index].ARPoint = path[index - 1].ARPoint
             path[index].ARPoint.y -= 9.1/3
+            path[index].pointType = 3
         } else if (node.x == path[index - 1].x) && node.y != startLine { ///ゴール前（startと異なるライン）
             print("ゴール前（startと異なるライン）：\(index)")
             path[index].ARPoint = path[index - 1].ARPoint
             path[index].ARPoint.z += 2.2
+            path[index].pointType = 4
         } else if (node.x == path[index - 1].x) && node.y == startLine { ///ゴール前（startと同じライン）
             print("ゴール前（startと同じライン）：\(index)")
             path[index].ARPoint = path[index - 1].ARPoint
             path[index].ARPoint.z -= 2.2
+            path[index].pointType = 5
         } else {
             print("その他：\(index)")
             print(path[index - 1].x)
