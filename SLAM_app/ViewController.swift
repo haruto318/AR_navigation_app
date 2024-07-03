@@ -50,6 +50,8 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     var right: SCNVector3 = SCNVector3()
     var lastSpherePosition: SCNVector3 = SCNVector3()
     
+    var isInitialDisplay: Bool = true
+    
     
     var locations: [CLLocation] = []
     
@@ -229,6 +231,11 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
             for node in self.mapView.path{
                 addSpheres(at: position, normal: normal, right: right, node: node)
             }
+            
+            // 30秒後にrestartTextRecognition()を呼び出す
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+                self.restartTextRecognition()
+            }
        
             /// AR Map
 //            for node in self.mapView.path{
@@ -348,6 +355,31 @@ extension ViewController: MessagePresenting {
         
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
+    
+    func restartSession() {
+//        // 現在のセッションを停止
+//        sceneView.session.pause()
+        
+        // 既存のアンカーを削除
+        sceneView.scene.rootNode.enumerateChildNodes { (node, _) in
+            node.removeFromParentNode()
+        }
+        
+        // 新しいセッションを開始
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.worldAlignment = .gravityAndHeading
+        configuration.planeDetection = [.horizontal, .vertical]
+        
+        if let nameplateImage = UIImage(named: "nameplate2"),
+           let cgImage = nameplateImage.cgImage {
+            let referenceImage = ARReferenceImage(cgImage, orientation: .up, physicalWidth: 0.2)
+            referenceImage.name = "nameplate"
+            configuration.detectionImages = [referenceImage]
+        }
+        
+        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+    }
+
 }
 
 ///AR Display
@@ -468,11 +500,12 @@ extension ViewController {
     private func processObservations(_ observations: [VNRecognizedTextObservation]) {
         guard let _ = sceneView else { return }
         
-//        isTextRecognitionRunning = true
+
         guard isTextRecognitionRunning else {
             print("Text recognition is already running.")
             return
         }
+        
             
         for observation in observations {
             let topCandidates = observation.topCandidates(1)
@@ -504,7 +537,7 @@ extension ViewController {
         }
 
         // Cancel the text detection request
-        textDetectionRequest?.cancel()
+//        textDetectionRequest?.cancel()
         
         // Reset the flag and any necessary variables
         isTextRecognitionRunning = false
@@ -512,13 +545,7 @@ extension ViewController {
     }
     
     func restartTextRecognition() {
-        guard !isTextRecognitionRunning else {
-            print("Text recognition is already running.")
-            return
-        }
-        
-        // Restart the text recognition process
-        setupTextDetection()
+        isTextRecognitionRunning = true
     }
 }
 
@@ -571,7 +598,32 @@ extension ViewController {
         let comfirmAction = UIAlertAction(title: "OK", style: UIAlertAction.Style.default, handler: {
             (action: UIAlertAction!) in
             self.start = text.index
-            self.kakuninButton.isHidden = false /// ボタン表示
+            print("Start: \(self.start)")
+            
+            if self.isInitialDisplay {
+                self.kakuninButton.isHidden = false /// ボタン表示
+                self.isInitialDisplay = false
+            } else {
+                self.sphereNodes.removeAll()
+                self.mapView.path.removeAll()
+                self.restartSession()
+                
+                let nodes = self.createNodes()
+                if let startNode = nodes[self.start], let goalNode = nodes[self.goal] {
+                    let path = aStar(startNode: startNode, goalNode: goalNode)
+                    ///2D Map
+                    self.mapView.path = path
+                    
+                    for node in self.mapView.path{
+                        self.addSpheres(at: self.position, normal: self.normal, right: self.right, node: node)
+                    }
+                    
+                    // 30秒後にrestartTextRecognition()を呼び出す
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+                        self.restartTextRecognition()
+                    }
+                }
+            }
             print("Okのシートが選択されました。")
         })
         actionAlert.addAction(comfirmAction)
