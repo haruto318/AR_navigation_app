@@ -24,6 +24,8 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     var roomArray: [(id: String, index: Character)] = []
     var start: Character = "H"
     var goal: Character = "H"
+    
+    private var resetButton: UIButton!
 
     private let configuration = ARWorldTrackingConfiguration()
     var locationService: LocationService = LocationService()
@@ -43,7 +45,7 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     private var locationManager = CLLocationManager()
     private var currentLocation: CLLocation?
     var detectedText: (id: String, index: Character) = (id: "", index: "H") //Characterの初期値わからん
-    private var isTextRecognitionRunning: Bool = true
+    private var isTextRecognitionRunning: Bool = false
     
     var position: SCNVector3 = SCNVector3()
     var normal: SCNVector3 = SCNVector3()
@@ -82,6 +84,8 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
         
         setupTextDetection()
         
+        setupResetButton()
+        
         // Add annotation
         addAnnotation(at: CGPoint(x: 131, y: 846), title: "location")
         
@@ -104,6 +108,31 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
             scrollView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: view.frame.height)
         }
         scrollView.contentSize = mapImageView.bounds.size
+    }
+    
+    private func setupResetButton() {
+        resetButton = UIButton(type: .system)
+        resetButton.setTitle("Reset", for: .normal)
+        resetButton.setTitleColor(.white, for: .normal)
+        resetButton.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        resetButton.layer.cornerRadius = 10
+        resetButton.addTarget(self, action: #selector(resetButtonTapped), for: .touchUpInside)
+        
+        self.view.addSubview(resetButton)
+        
+        resetButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            resetButton.widthAnchor.constraint(equalToConstant: 80),
+            resetButton.heightAnchor.constraint(equalToConstant: 40),
+            resetButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            resetButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
+        ])
+    }
+        
+    @objc private func resetButtonTapped() {
+        sphereNodes.removeAll()
+        mapView.path.removeAll()
+        restartSession()
     }
 
     func setupScrollView() {
@@ -232,9 +261,19 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
                 addSpheres(at: position, normal: normal, right: right, node: node)
             }
             
-            // 30秒後にrestartTextRecognition()を呼び出す
-            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-                self.restartTextRecognition()
+            DispatchQueue.main.async {
+                // ローディングビューを表示
+                self.showLoadingView()
+                                
+                // 10秒後にローディングビューを非表示にする
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                    self.hideLoadingView()
+                                    
+//                    // 30秒後にrestartTextRecognition()を呼び出す
+//                    DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+//                        self.restartTextRecognition()
+//                    }
+                }
             }
        
             /// AR Map
@@ -345,7 +384,7 @@ extension ViewController: MessagePresenting {
         configuration.worldAlignment = .gravityAndHeading
         configuration.planeDetection = [.horizontal, .vertical]
         
-        guard let nameplateImage = UIImage(named: "nameplate2"),
+        guard let nameplateImage = UIImage(named: "nameplate"),
               let cgImage = nameplateImage.cgImage else {
             fatalError("Failed to load nameplate image")
         }
@@ -357,8 +396,8 @@ extension ViewController: MessagePresenting {
     }
     
     func restartSession() {
-//        // 現在のセッションを停止
-//        sceneView.session.pause()
+        // 現在のセッションを停止
+        sceneView.session.pause()
         
         // 既存のアンカーを削除
         sceneView.scene.rootNode.enumerateChildNodes { (node, _) in
@@ -370,7 +409,7 @@ extension ViewController: MessagePresenting {
         configuration.worldAlignment = .gravityAndHeading
         configuration.planeDetection = [.horizontal, .vertical]
         
-        if let nameplateImage = UIImage(named: "nameplate2"),
+        if let nameplateImage = UIImage(named: "nameplate"),
            let cgImage = nameplateImage.cgImage {
             let referenceImage = ARReferenceImage(cgImage, orientation: .up, physicalWidth: 0.2)
             referenceImage.name = "nameplate"
@@ -584,6 +623,8 @@ extension ViewController {
         right = SCNVector3(imageAnchor.transform.columns.0.x,
                                imageAnchor.transform.columns.0.y,
                                imageAnchor.transform.columns.0.z)
+        
+        restartTextRecognition()
 
     }
 }
@@ -604,23 +645,37 @@ extension ViewController {
                 self.kakuninButton.isHidden = false /// ボタン表示
                 self.isInitialDisplay = false
             } else {
-                self.sphereNodes.removeAll()
-                self.mapView.path.removeAll()
-                self.restartSession()
+//                self.sphereNodes.removeAll()
+//                self.mapView.path.removeAll()
+//                self.restartSession()
                 
-                let nodes = self.createNodes()
-                if let startNode = nodes[self.start], let goalNode = nodes[self.goal] {
-                    let path = aStar(startNode: startNode, goalNode: goalNode)
-                    ///2D Map
-                    self.mapView.path = path
-                    
-                    for node in self.mapView.path{
-                        self.addSpheres(at: self.position, normal: self.normal, right: self.right, node: node)
-                    }
-                    
-                    // 30秒後にrestartTextRecognition()を呼び出す
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-                        self.restartTextRecognition()
+                // ローディングビューを表示
+                self.showLoadingView()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+                    let nodes = self.createNodes()
+                    if let startNode = nodes[self.start], let goalNode = nodes[self.goal] {
+                        let path = aStar(startNode: startNode, goalNode: goalNode)
+                        ///2D Map
+                        self.mapView.path = path
+                        
+                        for node in self.mapView.path{
+                            self.addSpheres(at: self.position, normal: self.normal, right: self.right, node: node)
+                        }
+                        
+//                        DispatchQueue.main.async {
+//                            // ローディングビューを表示
+//                            self.showLoadingView()
+                            
+                            // 10秒後にローディングビューを非表示にする
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                                self.hideLoadingView()
+                                
+//                                // 30秒後にrestartTextRecognition()を呼び出す
+//                                DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+//                                    self.restartTextRecognition()
+//                                }
+                            }
+//                        }
                     }
                 }
             }
@@ -802,6 +857,42 @@ extension ViewController {
         sphereNodes.removeFirst()
     }
 }
+
+extension ViewController {
+    func showLoadingView() {
+        let loadingView = UIView(frame: sceneView.bounds)
+        loadingView.backgroundColor = UIColor(white: 0, alpha: 0.7)
+        loadingView.tag = 1001  // Tag to identify the loading view
+
+        let activityIndicator = UIActivityIndicatorView(style: .large)
+        activityIndicator.color = .white
+        activityIndicator.center = loadingView.center
+        activityIndicator.startAnimating()
+
+        let label = UILabel()
+        label.text = "Do not move your device"
+        label.textColor = .white
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        loadingView.addSubview(activityIndicator)
+        loadingView.addSubview(label)
+        sceneView.addSubview(loadingView)
+
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: loadingView.centerXAnchor),
+            label.topAnchor.constraint(equalTo: activityIndicator.bottomAnchor, constant: 20)
+        ])
+    }
+
+    func hideLoadingView() {
+        if let loadingView = sceneView.viewWithTag(1001) {
+            loadingView.removeFromSuperview()
+        }
+    }
+}
+
+
 
 
 
