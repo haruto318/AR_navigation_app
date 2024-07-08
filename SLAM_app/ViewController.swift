@@ -360,6 +360,12 @@ extension ViewController {
         sceneView.showsStatistics = true
         let scene = SCNScene()
         sceneView.scene = scene
+        
+        let lightNode = SCNNode()
+        let light = SCNLight()
+        lightNode.light = light
+        scene.rootNode.addChildNode(lightNode)
+        
         navigationController?.setNavigationBarHidden(true, animated: false)
         
         if CLLocationManager.locationServicesEnabled() {
@@ -603,7 +609,7 @@ extension ViewController {
             print("Failed to perform text-detection request: \(error)")
         }
         
-        getDistancesToSpheres()
+//        getDistancesToSpheres()
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
@@ -698,126 +704,239 @@ extension ViewController {
 
 ///AR
 extension ViewController {
+//    func addSpheres(at position: SCNVector3, normal: SCNVector3, right: SCNVector3, node: Node) {
+//        
+////        print("node type: \(node.pointType)")
+//        
+//        if sphereNodes.count == 0 {
+//            // 緑の球体を法線方向に2メートル離れた位置に配置
+//            let sphereNode = createSphere(color: .green, radius: 0.05)
+//            let distance: Float = 0.0
+//            let spherePosition = SCNVector3(
+//                position.x + normal.x * distance,
+//                position.y + normal.y * distance, ///上
+//                position.z + normal.z * distance  /// 縦
+//            )
+//            sphereNode.position = spherePosition
+//            lastSpherePosition = spherePosition
+//            sceneView.scene.rootNode.addChildNode(sphereNode)
+//            sphereNodes.append(sphereNode)
+//            lastSpherePosition = spherePosition
+//        } else {
+//            let sphereNode = createSphere(color: .blue, radius: 0.05)
+//            switch node.pointType {
+//            case 1:
+//                let distance: Float = 2.2
+//                let spherePosition = SCNVector3(
+//                    position.x + normal.x * distance,
+//                    position.y + normal.y * distance, ///上
+//                    position.z + normal.z * distance  /// 縦
+//                )
+//                sphereNode.position = spherePosition
+//                lastSpherePosition = spherePosition
+//                sceneView.scene.rootNode.addChildNode(sphereNode)
+//                sphereNodes.append(sphereNode)
+//                lastSpherePosition = spherePosition
+//                break
+//            case 2:
+//                let distance: Float = 9.1/3
+//                let spherePosition = SCNVector3(
+//                    lastSpherePosition.x + right.x * distance,
+//                    lastSpherePosition.y + right.y * distance, ///上
+//                    lastSpherePosition.z + right.z * distance  /// 縦
+//                )
+//                sphereNode.position = spherePosition
+//                lastSpherePosition = spherePosition
+//                sceneView.scene.rootNode.addChildNode(sphereNode)
+//                sphereNodes.append(sphereNode)
+//                lastSpherePosition = spherePosition
+//                break
+//            case 3:
+//                let distance: Float = -9.1/3
+//                let spherePosition = SCNVector3(
+//                    lastSpherePosition.x + right.x * distance,
+//                    lastSpherePosition.y + right.y * distance, ///上
+//                    lastSpherePosition.z + right.z * distance  /// 縦
+//                )
+//                sphereNode.position = spherePosition
+//                lastSpherePosition = spherePosition
+//                sceneView.scene.rootNode.addChildNode(sphereNode)
+//                sphereNodes.append(sphereNode)
+//                lastSpherePosition = spherePosition
+//                break
+//            case 4:
+//                let distance: Float = 2.2
+//                let spherePosition = SCNVector3(
+//                    lastSpherePosition.x + normal.x * distance,
+//                    lastSpherePosition.y + normal.y * distance, ///上
+//                    lastSpherePosition.z + normal.z * distance  /// 縦
+//                )
+//                sphereNode.position = spherePosition
+//                lastSpherePosition = spherePosition
+//                sceneView.scene.rootNode.addChildNode(sphereNode)
+//                sphereNodes.append(sphereNode)
+//                lastSpherePosition = spherePosition
+//                break
+//            case 5:
+//                let distance: Float = -2.2
+//                let spherePosition = SCNVector3(
+//                    lastSpherePosition.x + normal.x * distance,
+//                    lastSpherePosition.y + normal.y * distance, ///上
+//                    lastSpherePosition.z + normal.z * distance  /// 縦
+//                )
+//                sphereNode.position = spherePosition
+//                lastSpherePosition = spherePosition
+//                sceneView.scene.rootNode.addChildNode(sphereNode)
+//                sphereNodes.append(sphereNode)
+//                lastSpherePosition = spherePosition
+//                break
+//            default:
+//                return
+//            }
+//        }
+//    }
+//    
+//    func createSphere(color: UIColor, radius: CGFloat) -> SCNNode {
+//        let sphere = SCNSphere(radius: radius)
+//        let material = SCNMaterial()
+//        material.diffuse.contents = color
+//        sphere.materials = [material]
+//        return SCNNode(geometry: sphere)
+//    }
+    
+    
+    
+    
     func addSpheres(at position: SCNVector3, normal: SCNVector3, right: SCNVector3, node: Node) {
+        let sphereNode: SCNNode
+        let cubeNode: SCNNode
         
-//        print("node type: \(node.pointType)")
-        
-        if sphereNodes.count == 0 {
-            // 緑の球体を法線方向に2メートル離れた位置に配置
-            let sphereNode = createSphere(color: .green, radius: 0.05)
-            let distance: Float = 0.0
+        if sphereNodes.isEmpty {
+            // 緑の球体を法線方向に配置
+            sphereNode = createArrow(color: .green.withAlphaComponent(0.9), radius: 0.15)
             let spherePosition = SCNVector3(
-                position.x + normal.x * distance,
-                position.y + normal.y * distance, ///上
-                position.z + normal.z * distance  /// 縦
+                position.x + normal.x * 0.0,
+                position.y + normal.y * 0.0,
+                position.z + normal.z * 0.0
             )
             sphereNode.position = spherePosition
+            
+            cubeNode = createCube(color: .yellow.withAlphaComponent(0.9), size: 0.075)
+            sphereNode.addChildNode(cubeNode)
+            
             lastSpherePosition = spherePosition
-            sceneView.scene.rootNode.addChildNode(sphereNode)
-            sphereNodes.append(sphereNode)
         } else {
-            let sphereNode = createSphere(color: .blue, radius: 0.05)
+            sphereNode = createArrow(color: .blue.withAlphaComponent(0.9), radius: 0.15)
+            
+            let distance: Float
+            var spherePosition: SCNVector3
+            
             switch node.pointType {
             case 1:
-                let distance: Float = 2.2
-                let spherePosition = SCNVector3(
+                distance = 2.2
+                spherePosition = SCNVector3(
                     position.x + normal.x * distance,
-                    position.y + normal.y * distance, ///上
-                    position.z + normal.z * distance  /// 縦
+                    position.y + normal.y * distance,
+                    position.z + normal.z * distance
                 )
-                sphereNode.position = spherePosition
-                lastSpherePosition = spherePosition
-                sceneView.scene.rootNode.addChildNode(sphereNode)
-                sphereNodes.append(sphereNode)
-                break
             case 2:
-                let distance: Float = 9.1/3
-                let spherePosition = SCNVector3(
+                distance = 9.1 / 3
+                spherePosition = SCNVector3(
                     lastSpherePosition.x + right.x * distance,
-                    lastSpherePosition.y + right.y * distance, ///上
-                    lastSpherePosition.z + right.z * distance  /// 縦
+                    lastSpherePosition.y + right.y * distance,
+                    lastSpherePosition.z + right.z * distance
                 )
-                sphereNode.position = spherePosition
-                lastSpherePosition = spherePosition
-                sceneView.scene.rootNode.addChildNode(sphereNode)
-                sphereNodes.append(sphereNode)
-                break
             case 3:
-                let distance: Float = -9.1/3
-                let spherePosition = SCNVector3(
+                distance = -9.1 / 3
+                spherePosition = SCNVector3(
                     lastSpherePosition.x + right.x * distance,
-                    lastSpherePosition.y + right.y * distance, ///上
-                    lastSpherePosition.z + right.z * distance  /// 縦
+                    lastSpherePosition.y + right.y * distance,
+                    lastSpherePosition.z + right.z * distance
                 )
-                sphereNode.position = spherePosition
-                lastSpherePosition = spherePosition
-                sceneView.scene.rootNode.addChildNode(sphereNode)
-                sphereNodes.append(sphereNode)
-                break
             case 4:
-                let distance: Float = 2.2
-                let spherePosition = SCNVector3(
+                distance = 2.2
+                spherePosition = SCNVector3(
                     lastSpherePosition.x + normal.x * distance,
-                    lastSpherePosition.y + normal.y * distance, ///上
-                    lastSpherePosition.z + normal.z * distance  /// 縦
+                    lastSpherePosition.y + normal.y * distance,
+                    lastSpherePosition.z + normal.z * distance
                 )
-                sphereNode.position = spherePosition
-                lastSpherePosition = spherePosition
-                sceneView.scene.rootNode.addChildNode(sphereNode)
-                sphereNodes.append(sphereNode)
-                break
             case 5:
-                let distance: Float = -2.2
-                let spherePosition = SCNVector3(
+                distance = -2.2
+                spherePosition = SCNVector3(
                     lastSpherePosition.x + normal.x * distance,
-                    lastSpherePosition.y + normal.y * distance, ///上
-                    lastSpherePosition.z + normal.z * distance  /// 縦
+                    lastSpherePosition.y + normal.y * distance,
+                    lastSpherePosition.z + normal.z * distance
                 )
-                sphereNode.position = spherePosition
-                lastSpherePosition = spherePosition
-                sceneView.scene.rootNode.addChildNode(sphereNode)
-                sphereNodes.append(sphereNode)
-                break
             default:
                 return
             }
+            
+            
+            sphereNode.position = spherePosition
+            
+            cubeNode = createCube(color: .yellow.withAlphaComponent(0.9), size: 0.075)
+            sphereNode.addChildNode(cubeNode)
+            
+            lastSpherePosition = spherePosition
         }
+        
+        sceneView.scene.rootNode.addChildNode(sphereNode)
+        if sphereNodes.count > 0 {
+            // 次のノードがある方向にConeの先端を向ける
+            rotateNode(sphereNodes.last!, to: sphereNode.position)
+        }
+        sphereNodes.append(sphereNode)
+        lastSpherePosition = sphereNode.position
+        
+//        // 次のノードがある方向にConeの先端を向ける
+//        rotateNode(sphereNode, to: lastSpherePosition)
     }
-    
-    func createSphere(color: UIColor, radius: CGFloat) -> SCNNode {
-        let sphere = SCNSphere(radius: radius)
+
+    func createArrow(color: UIColor, radius: CGFloat) -> SCNNode {
+        let cone = SCNCone(topRadius: 0, bottomRadius: radius, height: 0.3)
         let material = SCNMaterial()
         material.diffuse.contents = color
-        sphere.materials = [material]
-        return SCNNode(geometry: sphere)
+        cone.materials = [material]
+        return SCNNode(geometry: cone)
     }
     
+    func createCube(color: UIColor, size: CGFloat) -> SCNNode {
+        let cube = SCNBox(width: size, height: size, length: size, chamferRadius: 0.3)
+        let material = SCNMaterial()
+        material.diffuse.contents = color
+        cube.materials = [material]
+        return SCNNode(geometry: cube)
+    }
+
+    func rotateNode(_ node: SCNNode, to direction: SCNVector3) {
+        let directionVector = SCNVector3ToGLKVector3(direction)
+        let nodeDirection = SCNVector3(0, 1, 0) // ノードの初期方向
+        let nodeDirectionGLK = SCNVector3ToGLKVector3(nodeDirection)
+        
+        let crossProduct = GLKVector3CrossProduct(nodeDirectionGLK, directionVector)
+        let dotProduct = GLKVector3DotProduct(GLKVector3Normalize(nodeDirectionGLK), GLKVector3Normalize(directionVector))
+        let angle = acos(dotProduct)
+        
+        print("-------------")
+        print(crossProduct.x)
+        print(crossProduct.y)
+        print(crossProduct.z)
+        
+        node.rotation = SCNVector4(crossProduct.x, crossProduct.y, crossProduct.z, angle)
+    }
+
+    func SCNVector3ToGLKVector3(_ vector: SCNVector3) -> GLKVector3 {
+        return GLKVector3Make(vector.x, vector.y, vector.z)
+    }
+
+
+
+
     
     
-//    // 青い球体を追加する関数
-//    func addBlueSphere(at referencePoint: simd_float4x4, point: (z: Float, y: Float)) {
-//        // 球体のノードを作成
-//        let sphere = SCNSphere(radius: 0.1)
-//        let material = SCNMaterial()
-//        material.diffuse.contents = UIColor.blue
-//        sphere.materials = [material]
-//        let sphereNode = SCNNode(geometry: sphere)
-//        
-//        // 基準点からのオフセットを計算
-//        var translation = matrix_identity_float4x4
-//        translation.columns.3.z = point.z // 後ろに2.2m
-//        translation.columns.3.y = point.y // 右に9.1m
-//        
-//        
-//        let finalTransform = simd_mul(referencePoint, translation)
-//        print(finalTransform)
-//        
-//        sphereNode.simdTransform = finalTransform
-//        sceneView.scene.rootNode.addChildNode(sphereNode)
-//        
-//        // Add the sphere node to the list
-//        sphereNodes.append(sphereNode)
-//    }
+    
+    
+    
     
     
     // Function to calculate distance between two SCNVector3 points
@@ -893,135 +1012,12 @@ extension ViewController {
 }
 
 
-
-
-
-
-
-///-----------------------------------------------------------------
-//仮のこし
-
-//import UIKit
-//import ARKit
-//import SceneKit
-//
-//class ViewController: UIViewController, ARSCNViewDelegate {
-//    var sceneView: ARSCNView!
-//    
-//    override func viewDidLoad() {
-//        super.viewDidLoad()
-//        setupARSceneView()
-//        setupARConfiguration()
-//    }
-//    
-//    func setupARSceneView() {
-//        sceneView = ARSCNView(frame: view.bounds)
-//        sceneView.delegate = self
-//        sceneView.showsStatistics = true
-//        sceneView.autoenablesDefaultLighting = true
-//        view.addSubview(sceneView)
-//    }
-//    
-//    func setupARConfiguration() {
-//        let configuration = ARWorldTrackingConfiguration()
-//        
-//        guard let nameplateImage = UIImage(named: "nameplate2"),
-//              let cgImage = nameplateImage.cgImage else {
-//            fatalError("Failed to load nameplate image")
-//        }
-//        
-//        let referenceImage = ARReferenceImage(cgImage, orientation: .up, physicalWidth: 0.2) // 実際の表札サイズに合わせて調整してください
-//        referenceImage.name = "nameplate"
-//        
-//        configuration.detectionImages = [referenceImage]
-//        
-//        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-//    }
-//    
-//    func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-//        guard let imageAnchor = anchor as? ARImageAnchor,
-//              imageAnchor.name == "nameplate" else { return }
-//        
-//        let position = SCNVector3(imageAnchor.transform.columns.3.x,
-//                                  imageAnchor.transform.columns.3.y,
-//                                  imageAnchor.transform.columns.3.z)
-//        
-//        // 法線ベクトルを取得（画像の前向きベクトル）
-//        let normal = SCNVector3(imageAnchor.transform.columns.1.x,
-//                                imageAnchor.transform.columns.1.y,
-//                                imageAnchor.transform.columns.1.z)
-//        
-//        // 表札の右方向ベクトルを取得
-//        let right = SCNVector3(imageAnchor.transform.columns.0.x,
-//                               imageAnchor.transform.columns.0.y,
-//                               imageAnchor.transform.columns.0.z)
-//        
-//        addSpheres(at: position, normal: normal, right: right)
-//    }
-//    
-//    func addSpheres(at position: SCNVector3, normal: SCNVector3, right: SCNVector3) {
-//        // 青い球体を表札の位置に配置
-//        let blueSphere = createSphere(color: .blue, radius: 0.05)
-//        blueSphere.position = position
-//        sceneView.scene.rootNode.addChildNode(blueSphere)
-//        
-//        // 緑の球体を法線方向に2メートル離れた位置に配置
-//        let greenSphere = createSphere(color: .green, radius: 0.05)
-//        let distance: Float = 0.0
-//        let greenSpherePosition = SCNVector3(
-//            position.x + normal.x * distance,
-//            position.y + normal.y * distance, ///上
-//            position.z + normal.z * distance  /// 縦
-//        )
-//        greenSphere.position = greenSpherePosition
-//        sceneView.scene.rootNode.addChildNode(greenSphere)
-//        
-//        // 緑の球体を法線方向に2メートル離れた位置に配置
-//        let yellowSphere = createSphere(color: .yellow, radius: 0.05)
-//        let yellowSpherePosition = SCNVector3(
-//            position.x + normal.x * 2.0,
-//            position.y + normal.y * 2.0, ///上
-//            position.z + normal.z * 2.0  /// 縦
-//        )
-//        yellowSphere.position = yellowSpherePosition
-//        sceneView.scene.rootNode.addChildNode(yellowSphere)
-//        
-//        // 緑の球体を法線方向に2メートル離れた位置に配置
-//        let redSphere = createSphere(color: .red, radius: 0.05)
-//        let redSpherePosition = SCNVector3(
-//            yellowSpherePosition.x + right.x * 2.0,
-//            yellowSpherePosition.y + right.y * 2.0, ///上
-//            yellowSpherePosition.z + right.z * 2.0  /// 縦
-//        )
-//        redSphere.position = redSpherePosition
-//        sceneView.scene.rootNode.addChildNode(redSphere)
-//        
-//        // 緑の球体を法線方向に2メートル離れた位置に配置
-//        let blackSphere = createSphere(color: .black, radius: 0.05)
-//        let blackSpherePosition = SCNVector3(
-//            yellowSpherePosition.x + right.x * 4.0,
-//            yellowSpherePosition.y + right.y * 4.0, ///上
-//            yellowSpherePosition.z + right.z * 4.0/// 縦
-//        )
-//        blackSphere.position = blackSpherePosition
-//        sceneView.scene.rootNode.addChildNode(blackSphere)
-//        
-//        // 緑の球体を法線方向に2メートル離れた位置に配置
-//        let whiteSphere = createSphere(color: .white, radius: 0.05)
-//        let whiteSpherePosition = SCNVector3(
-//            blackSpherePosition.x + normal.x * 2.0,
-//            blackSpherePosition.y + normal.y * 2.0, ///上
-//            blackSpherePosition.z + normal.z * 2.0  /// 縦
-//        )
-//        whiteSphere.position = whiteSpherePosition
-//        sceneView.scene.rootNode.addChildNode(whiteSphere)
-//    }
-//    
-//    func createSphere(color: UIColor, radius: CGFloat) -> SCNNode {
-//        let sphere = SCNSphere(radius: radius)
-//        let material = SCNMaterial()
-//        material.diffuse.contents = color
-//        sphere.materials = [material]
-//        return SCNNode(geometry: sphere)
-//    }
-//}
+extension SCNQuaternion {
+    init(_ x: Float, _ y: Float, _ z: Float, _ w: Float) {
+        self.init()
+        self.x = x
+        self.y = y
+        self.z = z
+        self.w = w
+    }
+}
