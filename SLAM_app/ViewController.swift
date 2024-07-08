@@ -33,7 +33,7 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     
     private var startBtn: UIButton!
     
-    private var sphereNodes: [SCNNode] = []
+    private var arrowNodes: [SCNNode] = []
     var startLocation = simd_float4x4()
     
     
@@ -130,7 +130,7 @@ class ViewController: UIViewController, UIScrollViewDelegate, UIPickerViewDelega
     }
         
     @objc private func resetButtonTapped() {
-        sphereNodes.removeAll()
+        arrowNodes.removeAll()
         mapView.path.removeAll()
         restartSession()
     }
@@ -808,25 +808,30 @@ extension ViewController {
     
     
     func addSpheres(at position: SCNVector3, normal: SCNVector3, right: SCNVector3, node: Node) {
-        let sphereNode: SCNNode
-        let cubeNode: SCNNode
         
-        if sphereNodes.isEmpty {
+        var arrowNode = SCNNode()
+        let coneNode: SCNNode
+        var cubeNode = SCNNode()
+        
+        if arrowNodes.isEmpty {
             // 緑の球体を法線方向に配置
-            sphereNode = createArrow(color: .green.withAlphaComponent(0.9), radius: 0.15)
-            let spherePosition = SCNVector3(
+            coneNode = createCone(color: .green.withAlphaComponent(0.9), radius: 0.15)
+            let conePosition = SCNVector3(
                 position.x + normal.x * 0.0,
                 position.y + normal.y * 0.0,
                 position.z + normal.z * 0.0
             )
-            sphereNode.position = spherePosition
+            coneNode.position = conePosition
             
-            cubeNode = createCube(color: .yellow.withAlphaComponent(0.9), size: 0.075)
-            sphereNode.addChildNode(cubeNode)
+            cubeNode = createCube(color: .red.withAlphaComponent(0.9), size: 0.15)
+            arrowNode.addChildNode(coneNode)
+            arrowNode.addChildNode(cubeNode)
             
-            lastSpherePosition = spherePosition
+            cubeNode.position = SCNVector3(conePosition.x, conePosition.y-0.2, conePosition.z)
+            
+            lastSpherePosition = conePosition
         } else {
-            sphereNode = createArrow(color: .blue.withAlphaComponent(0.9), radius: 0.15)
+            coneNode = createCone(color: .blue.withAlphaComponent(0.9), radius: 0.15)
             
             let distance: Float
             var spherePosition: SCNVector3
@@ -872,27 +877,33 @@ extension ViewController {
             }
             
             
-            sphereNode.position = spherePosition
+            arrowNode = SCNNode()
+            //arrowNode.position = spherePosition
             
-            cubeNode = createCube(color: .yellow.withAlphaComponent(0.9), size: 0.075)
-            sphereNode.addChildNode(cubeNode)
+            coneNode.position = spherePosition
+            
+            cubeNode = createCube(color: .red.withAlphaComponent(0.9), size: 0.15)
+            arrowNode.addChildNode(coneNode)
+            arrowNode.addChildNode(cubeNode)
+            
+            cubeNode.position = SCNVector3(spherePosition.x, spherePosition.y-0.2, spherePosition.z)
             
             lastSpherePosition = spherePosition
         }
         
-        sceneView.scene.rootNode.addChildNode(sphereNode)
-        if sphereNodes.count > 0 {
+        sceneView.scene.rootNode.addChildNode(coneNode)
+        if arrowNodes.count > 0 {
             // 次のノードがある方向にConeの先端を向ける
-            rotateNode(sphereNodes.last!, to: sphereNode.position)
+            rotateNode(arrowNodes.last!, to: coneNode.position)
         }
-        sphereNodes.append(sphereNode)
-        lastSpherePosition = sphereNode.position
+        arrowNodes.append(coneNode)
+        lastSpherePosition = coneNode.position
         
 //        // 次のノードがある方向にConeの先端を向ける
 //        rotateNode(sphereNode, to: lastSpherePosition)
     }
 
-    func createArrow(color: UIColor, radius: CGFloat) -> SCNNode {
+    func createCone(color: UIColor, radius: CGFloat) -> SCNNode {
         let cone = SCNCone(topRadius: 0, bottomRadius: radius, height: 0.3)
         let material = SCNMaterial()
         material.diffuse.contents = color
@@ -901,7 +912,7 @@ extension ViewController {
     }
     
     func createCube(color: UIColor, size: CGFloat) -> SCNNode {
-        let cube = SCNBox(width: size, height: size, length: size, chamferRadius: 0.3)
+        let cube = SCNBox(width: size, height: size, length: size, chamferRadius: 0.003)
         let material = SCNMaterial()
         material.diffuse.contents = color
         cube.materials = [material]
@@ -957,11 +968,11 @@ extension ViewController {
 //            let distance = distanceBetweenPoints(cameraPosition, spherePosition)
 //            print("Distance to sphere at \(spherePosition): \(distance) meters")
 //        }
-        guard sphereNodes.count > 0 else {
+        guard arrowNodes.count > 0 else {
             print("0 node")
             return
         }
-        let spherePosition = sphereNodes.first!.position
+        let spherePosition = arrowNodes.first!.position
         let distance = distanceBetweenPoints(cameraPosition, spherePosition)
         if distance <= 1 {
             removeSphere()
@@ -971,9 +982,9 @@ extension ViewController {
     }
     
     func removeSphere() {
-        let sphereNode = sphereNodes.first!
+        let sphereNode = arrowNodes.first!
         sphereNode.removeFromParentNode()
-        sphereNodes.removeFirst()
+        arrowNodes.removeFirst()
     }
 }
 
